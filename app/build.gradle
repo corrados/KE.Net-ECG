@@ -26,6 +26,12 @@ android {
     namespace 'net.kenevans.polar.polarecg'
 }
 
+task generateVersionTxt {
+    doLast {
+        file("./version.txt").text = android.defaultConfig.versionName
+    }
+}
+
 dependencies {
     // Avoid duplicates
     constraints {
