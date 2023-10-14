@@ -21,7 +21,7 @@ jobs:
     - name: Build Debug APK
       run: ./gradlew assembleDebug
     - name: Releasing using Hub
-      uses: valley-fordham/action-release-debugapk@master
+      uses: ShaunLWM/action-release-debugapk@933f81b
       env:
        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
        APP_FOLDER: app
