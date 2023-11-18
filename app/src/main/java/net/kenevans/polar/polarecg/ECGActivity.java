@@ -1019,6 +1019,11 @@ public class ECGActivity extends AppCompatActivity
                 return;
             }
 
+            // suppress elements at the beginning
+            if (dataList.size() > 10) {
+                dataList.subList(0,9).clear();
+            }
+
             Uri treeUri = Uri.parse(treeUriStr);
             String treeDocumentId =
                     DocumentsContract.getTreeDocumentId(treeUri);
