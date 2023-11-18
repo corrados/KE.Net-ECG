@@ -235,9 +235,9 @@ public class QRSDetection implements IConstants, IQRSConstants {
 //                                movingAverageHr.average(), rr);
 //                            hrPlotter().addValues2(mStartTime + 1000 * mPeakIndex / FS,
 //                                    60000. / movingAverageRr.average(), rr);
-                            hrPlotter().addValues2(mStartTime + 1000 * mPeakIndex / FS,
-                                    rr_withcorr, rr_withcorr);
-                            hrPlotter().fullUpdate();
+//                            hrPlotter().addValues2(mStartTime + 1000 * mPeakIndex / FS,
+//                                    rr_withcorr, rr_withcorr);
+//                            hrPlotter().fullUpdate();
                         }
                     }
                 }
