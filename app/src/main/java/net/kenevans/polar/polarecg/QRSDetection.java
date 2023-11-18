@@ -12,6 +12,8 @@ public class QRSDetection implements IConstants, IQRSConstants {
 
     private final FixedSizeList<Integer> mPeakIndices =
             new FixedSizeList<>(DATA_WINDOW);
+    private final FixedSizeList<Double> mPeakIndicesCorrection =
+            new FixedSizeList<>(DATA_WINDOW);
     private int mPeakIndex = -1;
     private int mMinPeakIndex = -1;
     private int mMaxPeakIndex = -1;
@@ -87,7 +89,7 @@ public class QRSDetection implements IConstants, IQRSConstants {
         curEcg.add(ecg);
 
         FixedSizeList<Double> input;
-        double doubleVal, hr, rr;
+        double doubleVal, hr, rr, rr_withcorr;
         double variance;
 
 //        // Butterworth
@@ -118,6 +120,7 @@ public class QRSDetection implements IConstants, IQRSConstants {
 
         double val, maxEcg, lastMaxEcgVal;
         double scoreval;
+        double peakCorrection, peakValue, leftOfPeak, rightOfPeak, sub_sample_metric;
         int lastIndex, lastPeakIndex, startSearch, endSearch;
 
         input = curDeriv;
@@ -150,6 +153,25 @@ public class QRSDetection implements IConstants, IQRSConstants {
                         mPeakIndex = i1;
                     }
                 } // End of search
+
+                // calculate sub-sample peak value using simplified metric:
+                // m = (x[2] - x[0]) / (x[1] - x[0]) -> sub_sample = m * m / 2
+                peakCorrection = 0.0;
+                if ((mPeakIndex - 1 >= startSearch) && (mPeakIndex + 1 <= endSearch)) {
+                    peakValue = ecgVals.get(mPeakIndex);
+                    leftOfPeak = ecgVals.get(mPeakIndex - 1);
+                    rightOfPeak = ecgVals.get(mPeakIndex + 1);
+                    if (leftOfPeak > rightOfPeak) {
+                        // sample left of main peak is bigger than right sample
+                        sub_sample_metric = (leftOfPeak - rightOfPeak) / (peakValue - rightOfPeak);
+                        peakCorrection = sub_sample_metric * sub_sample_metric / 2;
+                    } else {
+                        // sample right of main peak is bigger than left sample
+                        sub_sample_metric = (rightOfPeak - leftOfPeak) / (peakValue - leftOfPeak);
+                        peakCorrection = -sub_sample_metric * sub_sample_metric / 2;
+                    }
+                }
+
 //                Log.d(TAG, "doAlgorithm: " +
 //                        ".......... end searching: startSearch="
 //                        + startSearch
@@ -167,6 +189,7 @@ public class QRSDetection implements IConstants, IQRSConstants {
                         if (maxEcg >= lastMaxEcgVal) {
                             // Replace the old one
                             mPeakIndices.setLast(mPeakIndex);
+                            mPeakIndicesCorrection.setLast(peakCorrection);
                             qrsPlotter().replaceLastPeakValue(mPeakIndex,
                                     maxEcg);
 //                            Log.d(TAG, "doAlgorithm: " +
@@ -177,6 +200,7 @@ public class QRSDetection implements IConstants, IQRSConstants {
                     } else {
                         // Is not near a previous one, add it
                         mPeakIndices.add(mPeakIndex);
+                        mPeakIndicesCorrection.add(peakCorrection);
                         qrsPlotter().addPeakValue(mPeakIndex,
                                 maxEcg);
 //                        Log.d(TAG, "doAlgorithm: " +
@@ -187,6 +211,7 @@ public class QRSDetection implements IConstants, IQRSConstants {
                 } else {
                     // First peak
                     mPeakIndices.add(mPeakIndex);
+                    mPeakIndicesCorrection.add(peakCorrection);
                     qrsPlotter().addPeakValue(mPeakIndex, maxEcg);
 //                    Log.d(TAG, "doAlgorithm: " +
 //                            "addPeakValue:"
@@ -196,6 +221,7 @@ public class QRSDetection implements IConstants, IQRSConstants {
 
                 // Do HR/RR plot
                 if (mPeakIndices.size() > 1) {
+                    rr_withcorr = 1000 / FS * (mPeakIndex + peakCorrection - mPeakIndices.get(mPeakIndices.size() - 2) - mPeakIndicesCorrection.get(mPeakIndices.size() - 2));
                     rr = 1000 / FS * (mPeakIndex - mPeakIndices.get(mPeakIndices.size() - 2));
                     hr = 60000. / rr;
                     if (!Double.isInfinite(hr)) {
@@ -207,8 +233,10 @@ public class QRSDetection implements IConstants, IQRSConstants {
 //                        hrPlotter().addValues2(mStartTime + 1000 *
 //                        mMaxIndex / FS,
 //                                movingAverageHr.average(), rr);
+//                            hrPlotter().addValues2(mStartTime + 1000 * mPeakIndex / FS,
+//                                    60000. / movingAverageRr.average(), rr);
                             hrPlotter().addValues2(mStartTime + 1000 * mPeakIndex / FS,
-                                    60000. / movingAverageRr.average(), rr);
+                                    rr_withcorr, rr_withcorr);
                             hrPlotter().fullUpdate();
                         }
                     }

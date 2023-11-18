@@ -88,7 +88,7 @@ public class HRPlotter implements IConstants, IQRSConstants {
             mHrSeries1 = new SimpleXYSeries("HR1");
         }
         if (mPlotRr1) {
-            mRrFormatter1 = new LineAndPointFormatter(Color.rgb(0, 0x99, 0xFF),
+            mRrFormatter1 = new LineAndPointFormatter(Color.rgb(0, 0xFF, 0),
                     null, null, null);
             mRrFormatter1.setLegendIconEnabled(false);
             mRrSeries1 = new SimpleXYSeries("RR1");
